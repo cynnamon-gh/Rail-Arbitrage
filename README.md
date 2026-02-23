@@ -1,17 +1,17 @@
 # NEC Fare Finder
 
-A Claude Code skill that finds the cheapest way to travel between NE Corridor cities by combining Amtrak fares with commuter rail alternatives (MARC, SEPTA, NJ Transit, Metro-North, Shore Line East).
+A Claude Code skill that shows you all the ways to travel between NE Corridor cities — direct Amtrak, split tickets, commuter rail, and mixed itineraries — so you can pick the best combination of price, time, and convenience.
 
 ## What it does
 
-When you ask Claude something like "cheapest way from Philly to Boston next Tuesday", it:
+When you ask Claude something like "I need to get from Philly to Boston next Tuesday", it:
 
 1. Looks up commuter rail schedules and fares from pre-built data
 2. Scrapes Amtrak's website for current fares (direct + split-ticket combos)
 3. Finds cross-operator connections (e.g., SEPTA to NJ Transit to Amtrak)
-4. Presents a unified results table sorted by price
+4. Presents a unified results table so you can compare everything side by side
 
-Typical savings: 30-60% vs direct Amtrak tickets.
+The point isn't to push you toward the cheapest option — it's to make sure you're not overpaying for the same thing. If buying two tickets for the same train is $44 instead of $68, you should know about it.
 
 ## Setup
 
@@ -29,15 +29,15 @@ npm install
 node build-commuter-data.js
 ```
 
-The build script downloads public GTFS feeds from MARC, SEPTA, NJ Transit, and Metro-North, parses them, and outputs `commuter-data.json` (~475 KB, 955 trips across 5 agencies).
+The build script downloads public GTFS feeds from MARC, SEPTA, and NJ Transit, parses them, and outputs `commuter-data.json`.
 
 ## Usage
 
 Just talk to Claude about train travel on the NE Corridor:
 
-- "Cheapest way from DC to NYC next Friday?"
+- "What are my options from DC to NYC next Friday?"
 - "Compare Amtrak vs commuter rail from Philly to Trenton"
-- "I need to get from Baltimore to Boston on March 5th"
+- "I need to get from Baltimore to Boston on March 5th, leaving after 9am"
 
 Claude handles everything — no web app, no copy-pasting.
 
@@ -57,13 +57,12 @@ Fares are hardcoded in `build-commuter-data.js` since most agencies don't includ
 
 | Agency | Segment | Fare Range |
 |--------|---------|-----------|
-| MARC Penn Line | WAS ↔ BAL | $5-12 |
+| MARC Penn Line | WAS ↔ BAL | $5-9 |
 | SEPTA Regional Rail | PHL ↔ WIL, PHL ↔ TRE | $8-11 |
 | NJ Transit NEC | TRE ↔ NYP | $5.50-21 |
-| Metro-North New Haven | GCT ↔ NHV | $12.75-24.75 |
 | Shore Line East | NHV ↔ NLC | $7.75 |
 
-Note: Metro-North goes to Grand Central, not Penn Station. The skill accounts for the ~15 min transfer.
+All of these share stations with Amtrak — no station changes needed.
 
 ## Files
 

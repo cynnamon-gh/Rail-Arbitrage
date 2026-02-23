@@ -1,11 +1,11 @@
 ---
 name: amtrak-arbitrage
-description: Use when checking Amtrak fares, finding cheaper split-ticket combinations, or looking for train fare arbitrage on the NE Corridor. Triggers on mentions of Amtrak prices, ticket splitting, fare comparison, or travel between NE Corridor cities (Washington DC to Boston).
+description: Use when checking Amtrak fares, comparing train options, or planning travel on the NE Corridor. Triggers on mentions of Amtrak prices, ticket splitting, fare comparison, or travel between NE Corridor cities (Washington DC to Boston).
 ---
 
 # NEC Fare Finder
 
-Finds the cheapest way to travel between NE Corridor cities (DC to Boston) by combining Amtrak with commuter rail alternatives (MARC, SEPTA, NJ Transit, Shore Line East). Split-ticket Amtrak, cross-operator transfers, and mixed itineraries can save 30-60% vs direct Amtrak.
+Shows all the ways to travel between NE Corridor cities (DC to Boston) — direct Amtrak, split tickets, commuter rail, and mixed itineraries — so the user can pick the best combination of price, time, and convenience. The goal isn't necessarily the cheapest option; it's making sure the user sees what's available and doesn't overpay for the same thing.
 
 **Scope:** Any Amtrak service on the NEC (Northeast Regional, Acela, Keystone, etc.) plus commuter rail. DC to Boston corridor. All train types welcome — they all share the same stations.
 
@@ -16,7 +16,7 @@ Finds the cheapest way to travel between NE Corridor cities (DC to Boston) by co
 
 ## When to Use
 
-- User wants to travel between any two NEC cities and wants the cheapest option
+- User wants to travel between any two NEC cities and wants to see their options
 - User asks about Amtrak fare arbitrage or ticket splitting
 - User wants to compare Amtrak vs commuter rail for a specific date
 - Any mention of train travel between cities from WAS to BOS
@@ -259,13 +259,13 @@ Sort all options by total price ascending. Present as a markdown table. **Every 
 
 | Depart | Arrive | Type     | Route                                              | Layover    | Price              |
 |--------|--------|----------|----------------------------------------------------|-----------|--------------------|
-| 05:15  | 11:02  | Split    | Amtrak 150 PHL→NYP + NYP→BBY (same train)         | —         | $60 ($15+$45)      |
 | 05:25  | 14:08  | Mixed    | SEPTA 1705 PHL→TRE (arr 06:20) + Amtrak 162 TRE 08:49→BBY | 2h29m TRE | $48.75 ($10.75+$38)|
-| 05:15  | 11:02  | Direct   | Amtrak 150 PHL→BBY                                 | —         | $70                |
+| 05:15  | 11:02  | Split    | Amtrak 150 PHL→NYP + NYP→BBY (same train)         | —         | $60 ($15+$45)      |
 | 12:06  | 18:40  | Transfer | Amtrak 118 PHL→NYP (arr 13:35) + Amtrak 82 NYP→BBY (dep 14:12) | 37m NYP  | $86 ($48+$38)     |
 | 12:28  | 18:40  | Split    | Amtrak 82 PHL→NYP + NYP→BBY (same train)          | —         | $106 ($68+$38)     |
-| 12:28  | 18:40  | Direct   | Amtrak 82 PHL→BBY                                  | —         | $144               |
 ```
+
+Note: Amtrak 150 direct was $70 but the split is $60 for the same train — only the split is shown. Amtrak 82 direct was $144 but the split is $106 — only the split is shown.
 
 **Requirements for the table:**
 - Depart and Arrive are the trip's true start and end times (first leg depart, last leg arrive)
@@ -276,11 +276,13 @@ Sort all options by total price ascending. Present as a markdown table. **Every 
 
 ### Step 8: Summarize
 
-Call out the best deal clearly with savings vs the cheapest direct Amtrak option. Note any caveats (transfers, peak pricing, time tradeoffs).
+Help the user understand what they're looking at. The goal is informed choice, not pushing the cheapest option. Highlight:
 
-If direct is cheapest, say so — that's useful info too.
+- **Where splits saved money on the same train** — flag these clearly since it's the same ride for less. The user should know when a split exists so they don't accidentally overpay.
+- **Tradeoffs worth noting** — a $26 option with a 25-minute transfer vs a $48 direct is a real choice. Present both sides: "saves $22 but adds a transfer at Trenton."
+- **Time clusters** — if several options leave around the same time at different prices, group that observation so the user can compare.
 
-For same-train splits, emphasize that it's the exact same ride — just two tickets instead of one.
+Don't declare a "best deal" or tell the user what to pick. Let the table speak for itself.
 
 ## Quick Reference: Commuter Fare Pairs
 
