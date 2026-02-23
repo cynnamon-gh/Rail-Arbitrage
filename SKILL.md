@@ -185,49 +185,95 @@ g. Click **FIND TRAINS** and wait for the results page to load
 
 ### Step 6: Build Combined Options
 
-Combine all results into a unified set of travel options:
+You now have two datasets:
+- **Amtrak results**: from Step 5, keyed by route (e.g. `PHL→BBY`, `PHL→NYP`, `NYP→BBY`). Each result has `{train, depart, arrive, coach, business, soldOut}`.
+- **Commuter trips**: from Steps 2/4, filtered by day + direction. Each trip has stop-by-stop times.
 
-| Type | What | Example |
-|------|------|---------|
-| **Direct** | Single Amtrak train (Regional, Acela, etc.) | Amtrak 150 PHL→BBY $70 |
-| **Split** | Same train, two tickets | Amtrak 150 PHL→NYP $15 + NYP→BBY $45 = $60 |
-| **Transfer** | Two different trains, same station | Amtrak 118→82 via NYP (37min) $86 |
-| **Commuter** | Commuter rail only | NJT TRE→NYP $21 |
-| **Mixed** | Amtrak + commuter legs | SEPTA PHL→TRE + NJT TRE→NYP + Amtrak NYP→BBY $69.75 |
+Combine them into concrete itineraries. **Every itinerary must have specific train numbers, exact departure/arrival times for every leg, and a price per leg.** No tildes, no approximations.
 
-**Same-train splits are the sweet spot.** The biggest no-brainer savings come from buying two tickets for the same train — same departure, same arrival, same seat, just cheaper. Always check these first.
+**Layover rules:** Default 10-60 minutes between legs at the same station, but respect the user's transfer tolerance from Step 1. If they're ok waiting longer for savings, include those (flag the wait time). Max 3 segments.
 
-**Cross-operator connections (same-station only):**
-For each intermediate stop, check these patterns:
-1. Commuter leg1 + Amtrak leg2 (e.g., SEPTA PHL→TRE + Amtrak TRE→BBY)
-2. Amtrak leg1 + Commuter leg2 (e.g., Amtrak WAS→BAL + commuter onward)
-3. Commuter chains (e.g., SEPTA PHL→TRE + NJT TRE→NYP + Amtrak NYP→BBY)
+**Also check `validFrom`/`validUntil` on commuter trips** — skip trips whose validity range doesn't cover the travel date.
 
-**Layover rules:** Default 10-60 minutes between legs at the same station, but respect the user's transfer tolerance preference from Step 1. If they're willing to wait longer for savings, include options with longer layovers (flag the wait time clearly). Support up to 3 segments max.
+#### 6a. Direct Amtrak
+
+Take each non-sold-out result from the origin→destination search. These are your baseline options.
+
+#### 6b. Same-train splits
+
+For each intermediate station you searched (e.g. NYP):
+- Look at the Amtrak results for origin→intermediate and intermediate→destination
+- **Match by train number.** If train 150 appears in both PHL→NYP results and NYP→BBY results, that's the same physical train — you just buy two tickets
+- Total price = leg1 coach + leg2 coach
+- Depart = leg1 depart, Arrive = leg2 arrive (same as direct, since it's the same train)
+- **Only include if total < the direct price for that same train** (otherwise no point splitting)
+
+These are the best deals — same ride, just cheaper tickets. Check these first.
+
+#### 6c. Different-train Amtrak transfers
+
+For each intermediate station:
+- For each leg1 result (origin→intermediate), look at all leg2 results (intermediate→destination)
+- A valid connection exists when: `leg2.depart >= leg1.arrive + min_layover` AND `leg2.depart <= leg1.arrive + max_layover`
+- Parse the datetime strings to compare (format is `2026-02-25T06:40`)
+- Total price = leg1 coach + leg2 coach
+- Record the layover duration
+
+#### 6d. Mixed: Commuter → Amtrak
+
+For each commuter segment that starts at/near the origin (e.g. SEPTA PHL→TRE):
+- For each commuter trip in the right direction, get the arrival time at the transfer station
+- Find Amtrak trains departing that station where: `amtrak.depart >= commuter_arrival + min_layover`
+- Total price = commuter fare + Amtrak coach price
+- Depart = commuter departure time, Arrive = Amtrak arrival time
+- Record layover duration at the transfer station
+
+Example: SEPTA train departs PHL 05:25, arrives TRE 06:20. Amtrak 150 departs TRE 05:45 — too early, skip. Amtrak 82 departs TRE 12:58 — 6h38m layover, probably too long unless user said they're ok with it.
+
+#### 6e. Mixed: Amtrak → Commuter
+
+Same logic reversed:
+- For each Amtrak train arriving at a station served by commuter rail
+- Find commuter trips departing after arrival + min_layover
+- Total = Amtrak fare + commuter fare
+
+#### 6f. Commuter chains + Amtrak
+
+For multi-commuter connections (e.g. SEPTA PHL→TRE + NJT TRE→NYP + Amtrak NYP→BBY):
+- Start with SEPTA trips PHL→TRE, get arrival time at TRE
+- Find NJT trips TRE→NYP departing after SEPTA arrival + min_layover, get arrival time at NYP
+- Find Amtrak trains departing NYP after NJT arrival + min_layover
+- Total = SEPTA fare + NJT fare + Amtrak fare
+- Depart = SEPTA departure, Arrive = Amtrak arrival
+- Record both layover durations
+
+#### 6g. Commuter-only (for short segments)
+
+If the origin and destination are both served by commuter rail (e.g. PHL→TRE, TRE→NYP, WAS→BAL), list the commuter-only options with specific trip times and fares. These may be the cheapest option for short hops.
 
 ### Step 7: Present Results
 
-Sort all options by total price ascending. Present as a markdown table:
+Sort all options by total price ascending. Present as a markdown table. **Every row must have exact times and specific train identifiers — no approximations.**
 
 ```
 ## PHL → BBY — Wednesday Feb 25, 2026
 
-| Depart | Arrive | Type     | Route                                    | Price             |
-|--------|--------|----------|------------------------------------------|-------------------|
-| 05:15  | 11:02  | Split    | Amtrak 150 via NYP (same train)          | $60 ($15+$45)     |
-| 05:15  | 11:02  | Direct   | Amtrak 150                               | $70               |
-| ~06:00 | ~14:08 | Mixed    | SEPTA+NJT→NYP, Amtrak 162               | $69.75            |
-| 12:06  | 18:40  | Transfer | Amtrak 118→82 via NYP (37min)            | $86 ($48+$38)     |
-| 12:28  | 18:40  | Split    | Amtrak 82 via NYP (same train)           | $106 ($68+$38)    |
-| 12:28  | 18:40  | Direct   | Amtrak 82                                | $144              |
-
-Best deal: Same-train split on Amtrak 150 — $60 (saves $10 vs $70 direct)
-
-Notes:
-- Includes all Amtrak services (Regional, Acela, Keystone). Acela tends to be pricier but sometimes competitive.
-- Commuter fares as of Feb 2026. SEPTA/NJT peak pricing applied for weekday.
-- All transfers are same-station (no walking between stations).
+| Depart | Arrive | Type     | Route                                              | Layover    | Price              |
+|--------|--------|----------|----------------------------------------------------|-----------|--------------------|
+| 05:15  | 11:02  | Split    | Amtrak 150 PHL→NYP + NYP→BBY (same train)         | —         | $60 ($15+$45)      |
+| 05:25  | 14:08  | Mixed    | SEPTA 1705 PHL→TRE (arr 06:20) + Amtrak 162 TRE 08:49→BBY | 2h29m TRE | $48.75 ($10.75+$38)|
+| 05:15  | 11:02  | Direct   | Amtrak 150 PHL→BBY                                 | —         | $70                |
+| 12:06  | 18:40  | Transfer | Amtrak 118 PHL→NYP (arr 13:35) + Amtrak 82 NYP→BBY (dep 14:12) | 37m NYP  | $86 ($48+$38)     |
+| 12:28  | 18:40  | Split    | Amtrak 82 PHL→NYP + NYP→BBY (same train)          | —         | $106 ($68+$38)     |
+| 12:28  | 18:40  | Direct   | Amtrak 82 PHL→BBY                                  | —         | $144               |
 ```
+
+**Requirements for the table:**
+- Depart and Arrive are the trip's true start and end times (first leg depart, last leg arrive)
+- Route column includes specific train numbers for EVERY leg (Amtrak train numbers, commuter train IDs)
+- For multi-leg trips, show arrival and departure times at transfer stations so the user can see the layover
+- Layover column shows wait time and station (e.g. "37m NYP", "2h29m TRE")
+- Price column shows total and breakdown per leg
 
 ### Step 8: Summarize
 
