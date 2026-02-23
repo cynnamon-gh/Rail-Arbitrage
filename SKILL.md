@@ -206,9 +206,8 @@ For each intermediate station you searched (e.g. NYP):
 - **Match by train number.** If train 150 appears in both PHL→NYP results and NYP→BBY results, that's the same physical train — you just buy two tickets
 - Total price = leg1 coach + leg2 coach
 - Depart = leg1 depart, Arrive = leg2 arrive (same as direct, since it's the same train)
-- **Only include if total < the direct price for that same train** (otherwise no point splitting)
-
-These are the best deals — same ride, just cheaper tickets. Check these first.
+- Compare split total vs direct price for that same train number
+- **Keep only the cheaper option.** The split and direct are the same physical ride — same train, same seats, same times. Only the ticketing differs. For each train number, show ONE row: whichever is cheapest (split or direct). Never show both.
 
 #### 6c. Different-train Amtrak transfers
 
