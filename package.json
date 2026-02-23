@@ -1,0 +1,13 @@
+{
+  "name": "amtrak-arbitrage",
+  "version": "1.0.0",
+  "description": "NEC fare finder with Amtrak + commuter rail alternatives",
+  "private": true,
+  "scripts": {
+    "build": "node build-commuter-data.js"
+  },
+  "dependencies": {
+    "csv-parse": "^5.6.0",
+    "adm-zip": "^0.5.16"
+  }
+}
