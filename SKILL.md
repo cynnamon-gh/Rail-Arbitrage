@@ -86,6 +86,27 @@ For the origin-destination pair and all intermediate stops, find commuter rail t
 - SEPTA → NJT at TRE
 - (MARC and SEPTA don't connect — there's a gap between PVL and WIL with no commuter rail)
 
+**Looking up commuter trip times (important for layover matching):**
+
+Each trip in `commuter-data.json` has a `stops` array with arrival (`a`) and departure (`d`) times at each station, in order. To find commuter trains for a segment:
+
+1. Filter trips by agency and day of week
+2. Check **stop order** to determine direction — the origin station must appear BEFORE the destination in the `stops` array
+3. Read the departure time at origin (`stops[originIdx].d`) and arrival time at destination (`stops[destIdx].a`)
+
+```javascript
+// Example: find SEPTA PHL→TRE trips on a Wednesday
+const septaTrips = relevantTrips.filter(t => {
+  if (t.agency !== 'septa') return false;
+  const phlIdx = t.stops.findIndex(s => s.s === 'PHL');
+  const treIdx = t.stops.findIndex(s => s.s === 'TRE');
+  return phlIdx >= 0 && treIdx >= 0 && phlIdx < treIdx; // direction check!
+});
+// Each matching trip gives you: depart PHL at stops[phlIdx].d, arrive TRE at stops[treIdx].a
+```
+
+**These times are what you use for layover calculations in mixed itineraries.** For example, if SEPTA arrives TRE at 06:20 and an Amtrak departs TRE at 06:45, that's a 25-minute layover.
+
 For each commuter segment found, compute the fare:
 ```javascript
 const fareKey = `${origin}->${dest}`;
